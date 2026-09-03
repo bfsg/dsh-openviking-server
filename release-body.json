@@ -1,8 +1,0 @@
-{
-    "body":  "Offline deployment bundle for OpenViking 0.4.17.1 + full dependency set.\n\nAsset: ov-wheels-0.4.17.1-win-amd64.zip (163 wheels / ~164 MB; Windows x86_64; Python 3.10+ incl. 3.12)\n\nUsage on an air-gapped host:\n  1) unzip the archive (yields an ov-wheels/ folder)\n  2) pip install --no-index --find-links ov-wheels/ openviking\n  3) openviking-server --host 127.0.0.1 --port 1933\n\nGenerated via: pip download --only-binary=:all: openviking (2026-09-04).\nVerified: clean-venv offline install succeeded (163 packages, no network).\nHelper scripts + docs: repo offline/ folder.",
-    "name":  "v0.1.0 - OpenViking 0.4.17.1 offline wheel bundle",
-    "target_commitish":  "main",
-    "tag_name":  "v0.1.0-offline-wheels",
-    "prerelease":  false,
-    "draft":  false
-}
