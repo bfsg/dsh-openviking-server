@@ -17,11 +17,18 @@ DeepSeek Harness(DSH)记忆系统 —— OpenViking 服务端 + DSH 插件的**�
 │   └── dsh-plugin-ov-server/        # [自研] 随 DSH 启动 openviking-server 的宿主插件
 ├── vendor/
 │   └── dsh-memory-plugin/           # [官方] @openviking/dsh-memory-plugin v0.3.0 打包副本
+├── offline/
+│   ├── install-offline.ps1          # Windows 离线一键安装脚本
+│   └── README.md                    # 离线安装说明
 ├── config/
 │   ├── ov.conf.example              # openviking-server 配置模板(占位 Key)
 │   └── ovcli.conf.example           # ov CLI 配置模板
 └── scripts/                         # 一键安装脚本(可选)
 ```
+
+> **内网无 PyPI?** openviking 本体离线包在仓库 [Releases](https://github.com/bfsg/dsh-openviking-server/releases)
+> (`ov-wheels-0.4.17.1-win-amd64.zip`,163 wheel,离线 `pip install --no-index --find-links` 即装)。
+> 详细见 `offline/README.md`。
 
 ## 快速开始(有网机器,30 秒看效果)
 
