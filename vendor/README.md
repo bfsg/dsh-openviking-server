@@ -21,5 +21,6 @@ dsh plugin --profile web add ./openviking-dsh-memory-plugin-0.3.0.tgz
 ## 本机已安装验证
 
 此副本即本机 `profiles/web/node_modules/@openviking/dsh-memory-plugin` 的完整拷贝
-(已去除无关文件,保留运行所需全部模块)。装配后 `dsh --profile web --dump-config`
-应能看到 `openviking-memory` 插件组。
+(已去除无关文件,保留运行所需全部模块)。`dsh` CLI 在桌面应用捆绑目录
+(`<安装目录>\DSH Desktop\resources\app\node_modules\@deepseek-ai\dsh\lib\bin.js`),
+不在系统 PATH;完整装配 + 校验 + 重启流程见仓库根 **[INSTALL.md](../INSTALL.md)**。

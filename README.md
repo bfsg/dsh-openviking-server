@@ -6,10 +6,16 @@ DeepSeek Harness(DSH)记忆系统 —— OpenViking 服务端 + DSH 插件的**�
 
 本仓库只收集**现成可用、无敏感信息**的部署资产,供内网/离线环境复用(已去除 API Key,配置均为模板)。
 
+## 从零部署?先看这份
+
+👉 **[INSTALL.md](./INSTALL.md)** —— DSH Desktop 记忆系统安装说明(**AI / 自动化可执行**):
+装服务端(含离线 wheel)→ 定位 dsh CLI → 装插件 → 3 条硬校验 → 重启 → 端到端验证 → 卸载回滚,每步带自检命令。
+
 ## 目录结构
 
 ```
 ├── README.md                        # 本文件
+├── INSTALL.md                       # [AI 可执行] 从零部署主文档
 ├── docs/
 │   ├── deploy-guide.md              # 通用部署指南(安装/配置/验证)
 │   └── huawei-intranet.md           # 华为内网部署清单(无公网环境)
