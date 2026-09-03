@@ -28,6 +28,7 @@ DeepSeek Harness(DSH)记忆系统 —— OpenViking 服务端 + DSH 插件的**�
 │   ├── install-offline.ps1          # Windows 离线一键安装脚本
 │   └── README.md                    # 离线安装说明
 ├── config/
+│   ├── CONFIG-GUIDE-AI.md           # [AI 可执行] ov.conf 填写指南:4 个必填值 + 自检 + 失败对照
 │   ├── ov.conf.example              # openviking-server 配置模板(占位 Key)
 │   └── ovcli.conf.example           # ov CLI 配置模板
 └── scripts/                         # 一键安装脚本(可选)

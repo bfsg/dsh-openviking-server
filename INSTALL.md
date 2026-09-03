@@ -63,12 +63,17 @@ python -m pip install --no-index --find-links .\ov-wheels\ openviking
 ```
 
 ### 1c. 写配置并启动
+> 填 ov.conf 前先读 **[config/CONFIG-GUIDE-AI.md](./config/CONFIG-GUIDE-AI.md)**(AI 可执行):
+> 你要准备的是 **4 个值**——api_base(带 /v1)、api_key、embedding 模型名、向量维度;照它的 §2 模板填,
+> 跑 §3 自检(JSON 校验 + doctor 看 Embedding PASS)。
+
 ```powershell
 $ov = "$env:USERPROFILE\.openviking"; New-Item -ItemType Directory -Path $ov -Force | Out-Null
-# 复制仓库 config\ov.conf.example → $ov\ov.conf,填 endpoint/api_key/model(远端)或删掉 vlm 段(本地)
+# 复制仓库 config\ov.conf.example → $ov\ov.conf,按 CONFIG-GUIDE-AI.md 填 4 个值
 # 复制仓库 config\ovcli.conf.example → $ov\ovcli.conf
 
-openviking-server doctor         # 应全部 PASS(至少 Config/Python/Embedding)
+python -c "import json; json.load(open(r'$ov\ov.conf')); print('JSON OK')"   # 必做:防注释/尾逗号
+openviking-server doctor         # Embedding 行 PASS = 4 个值齐全且连通
 openviking-server                # 前台;或后台任务启动
 ```
 
