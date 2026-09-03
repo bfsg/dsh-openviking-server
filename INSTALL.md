@@ -43,62 +43,113 @@ openviking-server                # 前台;或后台任务启动
 curl.exe http://127.0.0.1:1933/health    # 期望 {"status":"ok",...}
 ```
 
-## 2. 定位 `dsh` 命令行
+## 2. 环境锁定(先做,不做会装错地方)
 
-DSH Desktop 不保证 `dsh` 在系统 PATH 上。先探测:
-
-```powershell
-dsh --version
-```
-
-- 若打印版本号(如 `0.1.2-alpha.1`)→ 直接进入第 3 步,命令用 `dsh ...`。
-- 若报「无法识别 dsh」→ 改用桌面应用捆绑的 node + dsh bin,先定义变量(按实际安装目录替换 `<INSTALL_DIR>`,常见 `G:\desktop-dsh` 或 `C:\Program Files\DSH Desktop`):
+插件安装流程完全遵循 [PLUGIN-GUIDE-AI.md](./docs/PLUGIN-GUIDE-AI.md) §10–11(DSH Desktop 插件开发指南,AI 可执行版)。**第一条硬规则:CLI 不设 `DSH_HOME` 默认装到 `~/.dsh`,桌面版感知不到**。
 
 ```powershell
-$node = "<INSTALL_DIR>\DSH Desktop\resources\app\node_modules\node\bin\node.exe"
-$dsh  = "<INSTALL_DIR>\DSH Desktop\resources\app\node_modules\@deepseek-ai\dsh\lib\bin.js"
+# 1) 定位桌面版安装目录:从运行中进程/注册表/常见路径找,验证存在:
+#    <INSTALL_DIR>\DSH Desktop\resources\app\node_modules\@deepseek-ai\dsh\lib\bin.js
+#    本机示例:INSTALL_DIR = G:\desktop-dsh
+$installDir = "G:\desktop-dsh"            # ← 按实际替换
+
+# 2) 定义捆绑 node + dsh(一律用捆绑的,不要用 PATH 上的裸 dsh)
+$node = "$installDir\DSH Desktop\resources\app\node_modules\node\bin\node.exe"
+$dsh  = "$installDir\DSH Desktop\resources\app\node_modules\@deepseek-ai\dsh\lib\bin.js"
+& $node $dsh --version                     # 期望 0.1.x(如 0.1.2-alpha.1)
+
+# 3) 环境锁定:DSH_HOME 指到桌面版 harness;活跃 profile 用 web
+$env:DSH_HOME = "$env:APPDATA\dsh-desktop\harness"
+$profileDir  = "$env:DSH_HOME\profiles\web"
+$env:PATH    = "$env:DSH_HOME\.desktop-bin;" + $env:PATH    # 桌面版自带 pnpm shim
 ```
 
-> 本机实测:两文件存在,`& $node $dsh --version` → `0.1.2-alpha.1`。
+> 反查环境没锁错:第 5 步后 `~/.dsh/profiles/*/node_modules/@openviking` 必须**不存在**(存在=装错 home)。
 
 ## 3. 安装捕获/召回插件 @openviking/dsh-memory-plugin
 
 插件本体在仓库 `vendor\dsh-memory-plugin\`(官方 v0.3.0 完整运行副本,Apache-2.0)。
-二选一安装:
+安装 = **装依赖 + 接线**两步,先装依赖:
 
 ```powershell
-# 方式 A(推荐,离线):直接用仓库里的副本目录
-dsh plugin --profile web add "G:\path\to\dsh-openviking-server\vendor\dsh-memory-plugin"
+# 方式 A(推荐,离线):用仓库副本目录(等价于 pnpm add 本地目录)
+& $node $dsh plugin --profile web add "<仓库绝对路径>\vendor\dsh-memory-plugin"
+
+# 若上面失败,退回桌面版自带 pnpm 直接装:
+& "$env:DSH_HOME\.desktop-bin\pnpm.cmd" --dir "$profileDir" add "<仓库绝对路径>\vendor\dsh-memory-plugin"
 
 # 方式 B(官方命令,需 npm registry 可达)
-dsh plugin --profile web add @openviking/dsh-memory-plugin
+& $node $dsh plugin --profile web add @openviking/dsh-memory-plugin
 ```
 
-若 `dsh` 不在 PATH,统一用:
+## 4. 接线(二选一,绝不都做)
 
-```powershell
-& $node $dsh plugin --profile web add "<仓库绝对路径>\vendor\dsh-memory-plugin"
+> 本插件是 **bundle 包**(自带 `dsh.bundle.patch: ./cordis.patch.yml`,声明
+> `openviking-memory` 组)。loader 通过 package.json 的 `dsh.profile.bundles` 应用它的 bundle patch。
+> **只在 bundles 接线;不要再去 cordis.patch.yml 手动 insert openviking-memory——都做 =
+> `duplicate loader entry id` 启动失败**。
+
+检查并补全接线(编辑 `%APPDATA%\dsh-desktop\harness\profiles\web\package.json`):
+
+```jsonc
+{
+  "dependencies": {
+    "@openviking/dsh-memory-plugin": "^0.3.0"      // 装依赖后应有
+  },
+  "dsh": {
+    "profile": {
+      "bundles": [                                  // 必须含该包名
+        "@openviking/dsh-memory-plugin"
+        // ...其它 bundle
+      ]
+    }
+  }
+}
 ```
 
-## 4. 校验插件安装结果(3 条全过才算成功)
-
-Windows 下 profile 目录为 `%APPDATA%\dsh-desktop\harness\profiles\web`:
-
-1. `profiles\web\package.json` 的 `dependencies` 含 `"@openviking/dsh-memory-plugin"`;
-2. `profiles\web\node_modules\@openviking\dsh-memory-plugin\` 存在(index.mjs / runtime.mjs 等);
-3. 插件自带 `cordis.patch.yml` 已声明 `openviking-memory` 组(id `openviking-memory-runtime` 挂 `@openviking/dsh-memory-plugin`)。
-
-> 本插件走 **bundle 机制**激活(官方安装器把 bundle 装进 profile)。
-> 若上述 2、3 因手动安装不满足,可改走**手动 patch 装配**(见第 6 节备用路线)。
+校验(4 条全过才算装好):
+1. `package.json` 的 `dependencies` 含 `"@openviking/dsh-memory-plugin"`;
+2. 同一文件 `dsh.profile.bundles` 数组含 `"@openviking/dsh-memory-plugin"`;
+3. `profiles\web\node_modules\@openviking\dsh-memory-plugin\` 存在
+   (index.mjs / runtime.mjs / cordis.patch.yml);
+4. `cordis.patch.yml` 内 `openviking-memory` 组只出现一次(全局无重复 id)。
 
 ## 5. 重启 DSH Desktop(必做,不可省略)
 
-- 完全退出:系统托盘 → DSH Desktop 图标 → 右键 → **退出**;
-- 重新打开 DSH Desktop。
+```powershell
+# 完全退出(托盘退出,不要只关窗口):
+Stop-Process -Name "DSH Desktop" -Force -ErrorAction SilentlyContinue   # 或托盘右键退出
+Start-Process "$installDir\DSH Desktop\DSH Desktop.exe"
+```
 
-(重启后 harness 才加载插件 host 半;不重启插件不生效。可同时让第 6 节的 ov-server 插件接管服务进程。)
+(重启后 harness 才加载插件 host 半;不重启插件不生效。)
 
-## 6.(可选)安装随启动插件 dsh-plugin-ov-server
+## 6. 验证插件已加载(重启后全部打勾才算完成)
+
+```powershell
+# 1) 日志有新启动段且无插件报错(路径按实际 logs 位置)
+Select-String -Path "$env:APPDATA\dsh-desktop\logs\harness.log" -Pattern 'openviking|memory-plugin' |
+  Where-Object { $_ -match 'fail|error' }     # 应为空
+
+# 2) 服务端健康
+curl.exe http://127.0.0.1:1933/health          # {"status":"ok",...}
+```
+
+3. 打开任意会话,开头出现 **OpenViking 上下文注入块**(`<openviking-context ...>`);
+4. 工具列表出现 `mcp__openviking__search / read / list / grep / glob / remember / add_resource`;
+5. 问一句更早会话聊过的事(如「standard-250k preset 是什么」),能召回即通;
+6. 反查默认 home 没被污染:
+   `Get-ChildItem "$env:USERPROFILE\.dsh" -Recurse -Filter '*openviking*'` 应无结果;
+7. 仍无效:设 `$env:OV_DEBUG_LOG` 后重启 DSH,看插件日志。
+
+服务端侧复核(可选,端到端再确认):
+```powershell
+openviking-server doctor
+ov observer system          # embedding 队列 healthy
+ov ls viking://user/default/resources
+```
+
+## 7.(可选)安装随启动插件 dsh-plugin-ov-server
 
 作用:DSH 启动时自动确保 `openviking-server` 在 `127.0.0.1:1933` 运行(未运行则 detached 拉起,日志追加 `~/.openviking/server.log`),并提供 `/dsh-openviking/status|start|stop` 路由。零 runtime 依赖。
 
@@ -123,20 +174,6 @@ curl.exe http://127.0.0.1:1933/health        # 插件已拉起服务时返回 ok
 curl.exe http://127.0.0.1:49977/dsh-openviking/status   # 端口随 webServer 实际端口
 ```
 
-## 7. 验证记忆系统已生效(端到端)
-
-1. 打开任意会话,会话开头应出现 **OpenViking 上下文注入块**(`<openviking-context ...>` 或 profile/recall 注入);
-2. 模型工具列表出现 `mcp__openviking__search / read / list / grep / glob / remember / add_resource` 等;
-3. 问一句更早会话聊过的事(例如「standard-250k preset 是什么」),能召回即通;
-4. 仍无效果:设环境变量 `OV_DEBUG_LOG` 后重启 DSH,看插件日志。
-
-服务端侧复核:
-```powershell
-openviking-server doctor
-ov observer system          # embedding 队列 healthy
-ov ls viking://user/default/resources
-```
-
 ## 8. 卸载 / 回滚
 
 ```powershell
@@ -155,7 +192,11 @@ dsh plugin --profile web remove @openviking/dsh-memory-plugin
 | 现象 | 排查 |
 | --- | --- |
 | 会话无注入/无 `mcp__openviking__*` | 服务端未起(先过 §1 自检);插件未重载(§5);看 `OV_DEBUG_LOG` |
+| 启动失败 `duplicate loader entry id: openviking-memory` | bundles 和 patch 层**都**接线了 → 二选一(§4);或 cordis.patch.yml 里 insert 了框架 bundle 已有的 id |
+| 插件装了但桌面版没反应 | `DSH_HOME` 没设,装进了 `~/.dsh`(§2 环境锁定);反查 §6.6 |
+| 重装后代码没变化 | pnpm 对版本号未变的 file:/tgz 依赖跳过复制 → 删 `node_modules\@openviking\dsh-memory-plugin` 再 install |
+| 装插件后 package.json 无依赖 | `dsh plugin` 需在 DSH Desktop **退出状态**下跑,或用 `$DSH_HOME\.desktop-bin\pnpm.cmd` 装(§3) |
+| 日志 `migration failed, restoring the pre-upgrade profile` | 桌面版 generations 迁移既有问题,与新插件无关,忽略(PLUGIN-GUIDE-AI §12.10) |
 | `doctor` Embedding FAIL | 用远端端点时检查 ov.conf 的 api_base/api_key/model/dimension;本地则缺 llama-cpp-python |
-| 装插件后 package.json 无依赖 | `dsh plugin` 需在 DSH Desktop **退出状态**下跑,或在 profile 目录有 pnpm 时手动 `pnpm add` |
 | 记忆"串台" | 多项目共存时设 `OPENVIKING_RECALL_PEER_SCOPE=actor` |
 | 崩溃期间消息丢失 | 自动进 `~/.openviking/pending\`,下次会话开始重放(每次 ≤50 条) |

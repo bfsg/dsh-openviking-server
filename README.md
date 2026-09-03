@@ -18,7 +18,8 @@ DeepSeek Harness(DSH)记忆系统 —— OpenViking 服务端 + DSH 插件的**�
 ├── INSTALL.md                       # [AI 可执行] 从零部署主文档
 ├── docs/
 │   ├── deploy-guide.md              # 通用部署指南(安装/配置/验证)
-│   └── huawei-intranet.md           # 华为内网部署清单(无公网环境)
+│   ├── huawei-intranet.md           # 华为内网部署清单(无公网环境)
+│   └── PLUGIN-GUIDE-AI.md           # [归档] DSH Desktop 插件开发指南(AI 可执行版,INSTALL.md 第 2–6 节依据它)
 ├── plugins/
 │   └── dsh-plugin-ov-server/        # [自研] 随 DSH 启动 openviking-server 的宿主插件
 ├── vendor/
