@@ -1,0 +1,24 @@
+{
+  "name": "dsh-plugin-ov-server",
+  "version": "0.1.0",
+  "description": "Starts the local OpenViking server together with DSH: on apply it ensures openviking-server is running on 127.0.0.1:1933, and exposes /dsh-openviking/status|start|stop routes.",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "dsh",
+    "openviking",
+    "memory",
+    "server"
+  ],
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1"
+  }
+}

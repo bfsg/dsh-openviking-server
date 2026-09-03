@@ -1,0 +1,25 @@
+{
+  "embedding": {
+    "dense": {
+      "provider": "openai",
+      "api_base": "https://<YOUR_OPENAI_COMPATIBLE_ENDPOINT>/v1",
+      "api_key": "<YOUR_API_KEY>",
+      "model": "<EMBEDDING_MODEL>",
+      "dimension": 1024
+    }
+  },
+  "vlm": {
+    "provider": "openai",
+    "api_base": "https://<YOUR_OPENAI_COMPATIBLE_ENDPOINT>/v1",
+    "api_key": "<YOUR_API_KEY>",
+    "model": "<VLM_OR_LLM_MODEL>",
+    "thinking": false
+  },
+  "storage": {
+    "workspace": "C:/path/to/openviking/data"
+  },
+  "server": {
+    "host": "127.0.0.1",
+    "port": 1933
+  }
+}
