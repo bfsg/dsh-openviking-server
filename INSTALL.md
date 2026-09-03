@@ -4,15 +4,49 @@
 > 部署 = **① 服务端(openviking-server) + ② 捕获/召回插件(@openviking/dsh-memory-plugin) + ③(可选)随启动插件(dsh-plugin-ov-server)**。
 > 插件安装后必须**重启桌面应用**才生效。
 
-## 0. 前置条件
+## 0. 前置条件(目标机器上本身必须有)
 
-- 已安装并运行 **DSH Desktop**(Windows)。
-- Python 3.10–3.13(装服务端用;3.12.x 最稳)。
-- 模型通道二选一:
-  - **远程 OpenAI 兼容端点**(公网 API 或内网模型服务):填 `~/.openviking/ov.conf`;
-  - **纯本地**:内置 `bge-small-zh-v1.5-f16` + llama-cpp-python(Windows 无官方 wheel,不推荐)。
-- 离线包(无 PyPI 时):本仓库 [Releases](https://github.com/bfsg/dsh-openviking-server/releases) 的
-  `ov-wheels-0.4.17.1-win-amd64.zip`(Windows x86_64 / Python 3.10+,含 3.12)。
+分三类:部署流程会**自动处理**的不算前提;下面列的每一条都是机器上**预先要有**的,缺了装不动。
+
+### 0.1 必须预装(缺一不可)
+
+| 项 | 版本/要求 | 为什么必须有 | 缺失后果 |
+|---|---|---|---|
+| **DSH Desktop 桌面版** | 当前版(Electron 应用) | 插件的宿主;插件只装在它的 harness profile 里 | 没有它,捕获/召回插件无处可装(本仓库所有插件流程都针对桌面版,见 [docs/PLUGIN-GUIDE-AI.md](./docs/PLUGIN-GUIDE-AI.md)) |
+| **Python**(仅服务端用) | **3.10–3.13**,推荐 3.12.x | `openviking-server` 是 Python 程序;离线 wheel 是 `cp310-abi3`/`py3-none-any`,靠**系统 Python** 建 venv 安装(install-offline.ps1 用 `python -m venv`) | 离线包不含解释器;没有 Python 第 1 步就装不了 |
+
+> ⚠️ 离线包是 **wheel(代码),不含 Python 解释器**。内网机器必须先有 Python 3.12 才能用它。
+> 若内网连 Python 都没有:需另带官方 Python 3.12 安装包(或嵌入式 zip)一并拷入——这是仓库外的前提。
+
+### 0.2 必须有但无需预装(部署时提供/自带)
+
+| 项 | 说明 |
+|---|---|
+| openviking 本体 | 本仓库 Release `ov-wheels-*.zip` 自带(离线可装) |
+| @openviking/dsh-memory-plugin | 本仓库 `vendor\dsh-memory-plugin\` 自带 |
+| dsh-plugin-ov-server(可选) | 本仓库 `plugins\dsh-plugin-ov-server\` 自带 |
+| 配置文件 | 本仓库 `config\` 模板自带 |
+
+### 0.3 机器侧前提(非软件安装项)
+
+| 项 | 要求 |
+|---|---|
+| 模型服务可达 | 服务端需要 embedding;走内网 OpenAI 兼容端点时必须能访问它(网络放行);纯本地则需 llama-cpp-python + GGUF(不推荐,见 0.4) |
+| 磁盘空间 | openviking 数据目录(向量库/工作区)+ 解压后的 wheel 目录;建议预留 ≥1 GB |
+| 端口 | 服务端默认 `127.0.0.1:1933`,本机回环即可(单机不用开防火墙) |
+
+### 0.4 明确不需要的东西(免得白准备)
+
+- ❌ **不需要**先装 openviking / uv / pip 全局包——第 1 步会装(有网用 uv,离线用 Release wheel)
+- ❌ **不需要** llama-cpp-python(走内网模型服务时)——本仓库离线包已确认不含它
+- ❌ **不需要** Node.js / pnpm 全局安装——DSH Desktop 自带捆绑 node + `.desktop-bin` shim(§2 用它)
+- ❌ **不需要** Docker
+- ❌ **不需要** 访问 npm registry / PyPI(前提:已拿到本仓库 + Release 离线包)
+
+### 0.5 一句话清单
+
+> **一台装了 DSH Desktop 的 Windows x86_64 机器 + 系统 Python 3.12.x + 能访问内网模型服务(或自带本地模型)**
+> = 具备开始部署的全部前提。其余(openviking 本体、插件、配置)由本仓库提供。
 
 ## 1. 安装并启动服务端 openviking-server
 
